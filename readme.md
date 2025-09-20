@@ -7,7 +7,7 @@ This repository contains all the assets for RetroChallenges challenges.
 ```
 retrochallenges-assets/
 ├── assets/                  # Generic assets shared across all challenges
-├── utils/                   # Pre-built Lua utility scripts
+├── utils/                   # Pre-built Lua utility scripts (timers etc.)
 ├── nes/                     # Nintendo Entertainment System challenges
 │   └── [game-name]/         # Individual game folder
 │       └── [challenge-name]/ # Individual challenge folder
