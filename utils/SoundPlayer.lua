@@ -19,7 +19,10 @@ end
 local function combine(a,b)
   local Path = import("System.IO.Path")
   if Path and Path.Combine then return Path.Combine(a,b) end
-  if a:sub(-1) ~= "\\" and a:sub(-1) ~= "/" then a = a .. "\\" end
+  
+  -- Cross-platform path handling
+  local separator = package.config:sub(1,1) -- Get path separator for current OS
+  if a:sub(-1) ~= separator then a = a .. separator end
   return a .. b
 end
 local function file_exists(p)
@@ -71,7 +74,7 @@ function M.available()
 end
 
 -- Play WAV asynchronously. Pass absolute or relative path.
-function M.play(path)
+function M.play(path, volume)
   log("[Sound] Attempting to play: " .. tostring(path))
   
   -- Convert to absolute path if relative
@@ -103,6 +106,16 @@ function M.play(path)
     return false
   end
   log("[Sound] SoundPlayer instance created")
+
+  -- Set volume if provided (0.0 to 1.0)
+  if volume and volume >= 0.0 and volume <= 1.0 then
+    local okVol = pcall(function() sp.Volume = volume end)
+    if okVol then
+      log("[Sound] Volume set to: " .. tostring(volume))
+    else
+      log("[Sound] WARNING: Could not set volume")
+    end
+  end
 
   -- Try to play
   local okPlay, err = pcall(function() sp:Play() end)
@@ -155,6 +168,28 @@ function M.test()
     log("[Sound] SoundPlayer is NOT available")
     return false
   end
+end
+
+-- Get current volume (if supported)
+function M.getVolume()
+  if __sp_keep then
+    local ok, vol = pcall(function() return __sp_keep.Volume end)
+    if ok then
+      return vol
+    end
+  end
+  return nil
+end
+
+-- Check if sound is currently playing
+function M.isPlaying()
+  if __sp_keep then
+    local ok, playing = pcall(function() return __sp_keep.IsLoadCompleted end)
+    if ok then
+      return not playing -- IsLoadCompleted means it's done loading, so not playing
+    end
+  end
+  return false
 end
 
 return M
