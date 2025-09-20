@@ -1,0 +1,59 @@
+name: Create release ZIP
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for the release (e.g. v1.0.0)'
+        required: true
+        default: 'v0.0.0'
+      release_name:
+        description: 'Release name (optional)'
+        required: false
+        default: ''
+      body:
+        description: 'Release notes body (optional)'
+        required: false
+        default: ''
+      prerelease:
+        description: 'Set to "true" to mark as prerelease'
+        required: false
+        default: 'false'
+
+jobs:
+  zip-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Create release ZIP
+        run: |
+          # Create a single zip of the repository root. Exclude the .git folder and the workflow run's own ZIP if re-run.
+          # Adjust exclusions here if you want to omit savestates or large binary assets.
+          zip -r release.zip . -x ".git/*" ".github/workflows/*" "release.zip"
+
+      - name: Create GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ inputs.tag }}
+          release_name: ${{ inputs.release_name }}
+          body: ${{ inputs.body }}
+          draft: false
+          prerelease: ${{ inputs.prerelease == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release ZIP
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release.zip
+          asset_name: retrochallenges-assets-${{ inputs.tag }}.zip
+          asset_content_type: application/zip
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f release.zip
