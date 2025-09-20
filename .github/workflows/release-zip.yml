@@ -1,5 +1,8 @@
 name: Create release ZIP
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -36,17 +39,19 @@ jobs:
       - name: Create GitHub release
         id: create_release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.release_name }}
           body: ${{ inputs.body }}
           draft: false
           prerelease: ${{ inputs.prerelease == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload release ZIP
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./release.zip
