@@ -123,26 +123,103 @@ end
 local SoundPlayer = nil
 local soundAvailable = false
 
+-- Debug Lua environment
+print("=== Lua Environment Debug ===")
+print("package.path:", package.path)
+print("package.cpath:", package.cpath)
+print("Current working directory:", debug.getinfo(1, "S").source)
+print("Script directory:", script_dir())
+print("ROOT path:", ROOT)
+print("Utils path:", PATH.utils)
+print("=== End Debug ===")
+
 -- Try different ways to load SoundPlayer
 local function tryLoadSoundPlayer()
-    -- Method 1: Direct require
-    local ok, sp = pcall(function() return require("SoundPlayer") end)
+    print("Attempting to load SoundPlayer...")
+    
+    -- Method 1: Direct require (original case)
+    local ok, sp, err = pcall(function() return require("SoundPlayer") end)
     if ok and sp then
+        print("SoundPlayer loaded via direct require")
         return sp, true
+    else
+        print("Direct require failed: " .. tostring(err))
     end
     
-    -- Method 2: Try with utils path
-    local ok2, sp2 = pcall(function() return require("utils/SoundPlayer") end)
+    -- Method 2: Try with lowercase filename
+    local ok2, sp2, err2 = pcall(function() return require("soundplayer") end)
     if ok2 and sp2 then
+        print("SoundPlayer loaded via lowercase require")
         return sp2, true
+    else
+        print("Lowercase require failed: " .. tostring(err2))
     end
     
-    -- Method 3: Try with relative path
-    local ok3, sp3 = pcall(function() return require("../../utils/SoundPlayer") end)
+    -- Method 3: Try with utils path (original case)
+    local ok3, sp3, err3 = pcall(function() return require("utils/SoundPlayer") end)
     if ok3 and sp3 then
+        print("SoundPlayer loaded via utils/SoundPlayer")
         return sp3, true
+    else
+        print("utils/SoundPlayer failed: " .. tostring(err3))
     end
     
+    -- Method 4: Try with utils path (lowercase)
+    local ok4, sp4, err4 = pcall(function() return require("utils/soundplayer") end)
+    if ok4 and sp4 then
+        print("SoundPlayer loaded via utils/soundplayer")
+        return sp4, true
+    else
+        print("utils/soundplayer failed: " .. tostring(err4))
+    end
+    
+    -- Method 5: Try with relative path (original case)
+    local ok5, sp5, err5 = pcall(function() return require("../../utils/SoundPlayer") end)
+    if ok5 and sp5 then
+        print("SoundPlayer loaded via relative path")
+        return sp5, true
+    else
+        print("Relative path failed: " .. tostring(err5))
+    end
+    
+    -- Method 6: Try with relative path (lowercase)
+    local ok6, sp6, err6 = pcall(function() return require("../../utils/soundplayer") end)
+    if ok6 and sp6 then
+        print("SoundPlayer loaded via relative lowercase path")
+        return sp6, true
+    else
+        print("Relative lowercase path failed: " .. tostring(err6))
+    end
+    
+    -- Method 7: Try direct file loading as fallback
+    print("Trying direct file loading...")
+    local soundplayerPath = PATH.utils .. "soundplayer.lua"
+    local file = io.open(soundplayerPath, "r")
+    if file then
+        file:close()
+        print("SoundPlayer file found at: " .. soundplayerPath)
+        
+        -- Try to load and execute the file directly
+        local ok7, sp7, err7 = pcall(function()
+            local chunk = loadfile(soundplayerPath)
+            if chunk then
+                return chunk()
+            else
+                return nil, "Failed to load file"
+            end
+        end)
+        
+        if ok7 and sp7 then
+            print("SoundPlayer loaded via direct file loading")
+            return sp7, true
+        else
+            print("Direct file loading failed: " .. tostring(err7))
+        end
+    else
+        print("SoundPlayer file not found at: " .. soundplayerPath)
+    end
+    
+    print("All SoundPlayer load attempts failed")
     return nil, false
 end
 
@@ -153,8 +230,11 @@ if not soundAvailable then
     SoundPlayer = {
         available = function() return false end,
         play = function() return false end,
-        stop = function() return false end
+        stop = function() return false end,
+        diagnose = function() print("SoundPlayer not loaded - cannot run diagnostics") end
     }
+else
+    print("SoundPlayer loaded successfully")
 end
 
 -- Initialize timer
